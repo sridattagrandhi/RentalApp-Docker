@@ -1,17 +1,16 @@
 // app/(tabs)/index.tsx
-import React, { useState, useCallback } from 'react';
+import { Ionicons } from '@expo/vector-icons'; // For icons
+import { useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
+  Keyboard,
   SafeAreaView,
   StatusBar,
+  Text,
   TextInput,
-  Keyboard,
-  Platform, // For Platform specific styles if needed
+  TouchableOpacity,
+  View
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons'; // For icons
 
 import CityPicker from '../../components/CityPicker'; // Your existing component
 import ThemedText from '../../components/ThemedText'; // Assuming this is styled for body text

@@ -1,4 +1,4 @@
-import { Listing, Message, UserProfile, ChatListItem } from './Types'; // Ensure Types.ts has all necessary fields
+import { ChatListItem, Listing, Message, UserProfile } from './Types'; // Ensure Types.ts has all necessary fields
 
 export let mockListings: Listing[] = [
   {

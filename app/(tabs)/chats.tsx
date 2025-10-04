@@ -62,9 +62,11 @@ function normalizePermissionStatus(
     return obj.status as Notifications.PermissionStatus;
   }
   if (obj && typeof obj.granted === 'boolean') {
-    return obj.granted ? 'granted' : 'denied';
+    return obj.granted
+      ? Notifications.PermissionStatus.GRANTED
+      : Notifications.PermissionStatus.DENIED;
   }
-  return 'undetermined';
+  return Notifications.PermissionStatus.UNDETERMINED;
 }
 
 export default function ChatsScreen() {
