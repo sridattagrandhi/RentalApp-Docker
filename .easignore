@@ -1,0 +1,8 @@
+# keep source code INCLUDED; only ignore junk
+node_modules
+.git
+.DS_Store
+npm-debug.log
+yarn-error.log
+dist
+build
