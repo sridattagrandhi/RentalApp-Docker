@@ -1,0 +1,19 @@
+{
+  "name": "k6-tests",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/*.ts --bundle --format=esm --outdir=dist --platform=neutral --external:k6 --external:k6/*",
+    "build:watch": "esbuild src/*.ts --bundle --format=esm --outdir=dist --platform=neutral --external:k6 --external:k6/* --watch",
+    "test:smoke": "npm run build && k6 run dist/00_smoke.js",
+    "test:stress": "npm run build && k6 run dist/10_stress.js",
+    "test:soak": "npm run build && k6 run dist/20_soak.js",
+    "test:login-post": "npm run build && k6 run dist/11_login_post.js"
+  },
+  "devDependencies": {
+    "@types/k6": "^0.48.2",
+    "esbuild": "^0.23.0",
+    "typescript": "^5.6.3"
+  }
+}

@@ -1,0 +1,10 @@
+# Ignore files and directories that do not need to be included in the Docker
+# image to reduce image size and build time.
+node_modules
+dist
+*.log
+tests
+coverage
+*__tests__
+.env
+*.md
