@@ -1,8 +1,8 @@
 // context/AuthContext.tsx
+import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { FIREBASE_AUTH } from '../constants/firebaseConfig';
 import { Platform } from 'react-native';
+import { FIREBASE_AUTH } from '../constants/firebaseConfig';
 
 // --- ✅ IMPROVED BASE_URL DETECTION ---
 // Determine the base URL for API requests.  Expo sets `EXPO_PUBLIC_DEV_URL` to
@@ -26,7 +26,7 @@ const DEV_SERVER_URL = devHost
   : 'http://localhost:5001';
 // When building for production we always call our deployed Cloud Run backend.
 // Update this URL if you deploy the backend to a different domain.
-const PRODUCTION_SERVER_URL = 'https://roomrentalnativeapp-383560472960.us-west2.run.app';
+const PRODUCTION_SERVER_URL = 'https://rentalapp-docker-383560472960.us-west2.run.app';
 const BASE_URL = __DEV__
   ? Platform.OS === 'android'
     ? (devHost && devHost !== 'localhost' ? `http://${devHost}:5001` : 'http://10.0.2.2:5001')
