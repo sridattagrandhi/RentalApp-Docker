@@ -1,19 +1,20 @@
-import express, { Express, Request, Response, NextFunction } from 'express';
-import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import express, { Express, NextFunction, Request, Response } from 'express';
 import admin from 'firebase-admin';
 import http from 'http';
+import mongoose from 'mongoose';
+import path from 'path';
 import { Server as IOServer, Socket } from 'socket.io';
 import configureCloudinary from './config/cloudinaryConfig';
 
-import authRoutes from './routes/authRoutes';
-import listingRoutes from './routes/listingRoutes';
-import chatRoutes from './routes/chatRoutes';
 import User from './models/User';
-import userRoutes from './routes/userRoutes';
-import uploadRoutes from './routes/uploadRoutes';
+import authRoutes from './routes/authRoutes';
+import chatRoutes from './routes/chatRoutes';
+import listingRoutes from './routes/listingRoutes';
 import notificationRoutes from './routes/notificationRoutes';
+import uploadRoutes from './routes/uploadRoutes';
+import userRoutes from './routes/userRoutes';
 
 dotenv.config();
 configureCloudinary();
@@ -55,6 +56,7 @@ if (!admin.apps.length) {
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.resolve(process.cwd(), "public")));
 
 const httpServer = http.createServer(app);
 const io = new IOServer(httpServer, {

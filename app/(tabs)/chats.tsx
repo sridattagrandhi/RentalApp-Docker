@@ -1,29 +1,30 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  SafeAreaView,
-  FlatList,
-  Image,
-  TouchableOpacity,
-  RefreshControl,
-  Platform,
-  ActivityIndicator,
-  TextInput,
-  Alert,
-} from 'react-native';
-import { Stack, useRouter, useFocusEffect } from 'expo-router';
+// chats.tsx
 import { Ionicons } from '@expo/vector-icons';
-import io, { Socket } from 'socket.io-client';
-import { GestureHandlerRootView, Swipeable, RectButton } from 'react-native-gesture-handler';
+import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { getExpoPushTokenAsync } from 'expo-notifications';
-import Constants from 'expo-constants';
+import { Stack, useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Image,
+  Platform,
+  RefreshControl,
+  SafeAreaView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { GestureHandlerRootView, RectButton, Swipeable } from 'react-native-gesture-handler';
+import io, { Socket } from 'socket.io-client';
 
-import { useAuth } from '../../context/AuthContext';
 import { Colors } from '../../constants/Colors';
-import { useColorScheme } from '../../hooks/useColorScheme';
 import { ChatListItem } from '../../constants/Types';
+import { useAuth } from '../../context/AuthContext';
+import { useColorScheme } from '../../hooks/useColorScheme';
 import { styles } from './chats.styles';
 
 // Derive a reliable API base URL.  When using Expo, the env var
@@ -51,6 +52,20 @@ const BASE_URL = __DEV__
     ? (devHost && devHost !== 'localhost' ? `http://${devHost}:5001` : 'http://10.0.2.2:5001')
     : DEV_SERVER_URL
   : PRODUCTION_SERVER_URL;
+
+// --- Helper to normalize permission result across Expo SDK/type variants ---
+function normalizePermissionStatus(
+  p: unknown
+): Notifications.PermissionStatus {
+  const obj = p as any; // intentionally loosened for cross-SDK compatibility
+  if (obj && typeof obj.status === 'string') {
+    return obj.status as Notifications.PermissionStatus;
+  }
+  if (obj && typeof obj.granted === 'boolean') {
+    return obj.granted ? 'granted' : 'denied';
+  }
+  return 'undetermined';
+}
 
 export default function ChatsScreen() {
   const router = useRouter();
@@ -119,38 +134,46 @@ export default function ChatsScreen() {
     const registerForPushNotifications = async () => {
       if (!firebaseUser) return; // Wait for the user to be authenticated
 
-      let token;
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
+      // Android 13+: ensure a channel exists before prompting
+      if (Platform.OS === 'android') {
+        await Notifications.setNotificationChannelAsync('default', {
+          name: 'Default',
+          importance: Notifications.AndroidImportance.MAX,
+        });
+      }
 
-      if (existingStatus !== 'granted') {
-          const { status } = await Notifications.requestPermissionsAsync();
-          finalStatus = status;
+      // Get existing permissions (shape can vary by SDK)
+      const existing = await Notifications.getPermissionsAsync();
+      let finalStatus = normalizePermissionStatus(existing);
+
+      if (finalStatus !== 'granted') {
+        const req = await Notifications.requestPermissionsAsync();
+        finalStatus = normalizePermissionStatus(req);
       }
 
       if (finalStatus !== 'granted') {
-          Alert.alert('Permission Denied', 'Failed to get push token for push notifications!');
-          return;
+        Alert.alert('Permission Denied', 'Failed to get push token for push notifications!');
+        return;
       }
 
       try {
-        // If running in a managed Expo app, projectId can be inferred from
-        // Constants.expoConfig.extra?.eas?.projectId.  Some bare workflows may
-        // omit this property, causing getExpoPushTokenAsync() to throw.  We
-        // attempt to provide it and gracefully skip if none is available.
-        const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+        // Provide projectId when available; some setups infer it automatically
+        const projectId =
+          (Constants as any).expoConfig?.extra?.eas?.projectId ??
+          (Constants as any).easConfig?.projectId;
+
         const pushTokenData = await getExpoPushTokenAsync(projectId ? { projectId } : {});
-        token = pushTokenData.data;
+        const token = pushTokenData.data;
         console.log('Push Token:', token);
 
         const idToken = await firebaseUser.getIdToken();
         await fetch(`${BASE_URL}/api/users/push-token`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${idToken}`,
-            },
-            body: JSON.stringify({ token }),
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({ token }),
         });
       } catch (err) {
         console.error('Failed to send push token to backend', err);

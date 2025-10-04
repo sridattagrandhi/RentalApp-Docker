@@ -1,28 +1,28 @@
 // profile.tsx
-import React, { useState, useEffect } from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  Image,
-  TouchableOpacity,
-  Text,
-  ActivityIndicator,
-  Alert,
-  Platform,
-  TextInput,
-  View,
-} from 'react-native';
-import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { signOut, updateProfile, updateEmail } from 'firebase/auth';
+import { Stack, useRouter } from 'expo-router';
+import { signOut, updateEmail, updateProfile } from 'firebase/auth';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { FIREBASE_AUTH } from '../../constants/firebaseConfig';
 
-import { useAuth } from '../../context/AuthContext';
-import { Colors } from '../../constants/Colors';
-import { useColorScheme } from '../../hooks/useColorScheme';
-import ThemedView from '../../components/ThemedView';
 import ThemedText from '../../components/ThemedText';
+import ThemedView from '../../components/ThemedView';
+import { Colors } from '../../constants/Colors';
+import { useAuth } from '../../context/AuthContext';
+import { useColorScheme } from '../../hooks/useColorScheme';
 import { styles } from './profile.styles';
 
 // Compute the base URL for API calls.  When EXPO_PUBLIC_DEV_URL is not

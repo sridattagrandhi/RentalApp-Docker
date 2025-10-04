@@ -1,22 +1,22 @@
 // app/(auth)/login.tsx
-import React, { useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { Link, Stack, useLocalSearchParams, useRouter, type Href } from "expo-router"; // <-- Added useLocalSearchParams
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
-  SafeAreaView,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-  ActivityIndicator,
+  View,
 } from "react-native";
-import { Stack, useRouter, Link, useLocalSearchParams, type Href } from "expo-router"; // <-- Added useLocalSearchParams
-import { Ionicons } from "@expo/vector-icons";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { FIREBASE_AUTH } from "../../constants/firebaseConfig";
 import { Colors } from "../../constants/Colors";
+import { FIREBASE_AUTH } from "../../constants/firebaseConfig";
 import { useColorScheme } from "../../hooks/useColorScheme";
 import { styles } from "./auth.styles";
 

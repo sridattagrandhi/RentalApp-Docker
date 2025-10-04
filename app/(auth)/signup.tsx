@@ -1,26 +1,26 @@
 // app/(auth)/signup.tsx
 
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  SafeAreaView,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
-import { Stack, useRouter, Link } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { Link, Stack, useRouter } from "expo-router";
 import {
   createUserWithEmailAndPassword,
   updateProfile,
 } from "firebase/auth";
-import { FIREBASE_AUTH } from "../../constants/firebaseConfig";
+import { useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Colors } from "../../constants/Colors";
+import { FIREBASE_AUTH } from "../../constants/firebaseConfig";
 import { useColorScheme } from "../../hooks/useColorScheme";
 import { styles } from "./auth.styles";
 
