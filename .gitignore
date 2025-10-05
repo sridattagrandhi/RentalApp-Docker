@@ -47,3 +47,4 @@ constants/firebaseConfig.ts
 .env
 
 app-example
+constants/firebaseConfig.ts
