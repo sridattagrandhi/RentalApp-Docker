@@ -189,7 +189,7 @@ export default function MyListingsScreen() {
                     source={
                       imageUri
                         ? { uri: imageUri }
-                        : require('../../assets/images/placeholder.png') // add a placeholder image to your assets if you don’t already have one
+                        : require('../../assets/images/avatar.png') // add a placeholder image to your assets if you don’t already have one
                     }
                     style={{ width: '100%', height: 150, borderRadius: 8 }}
                   />
