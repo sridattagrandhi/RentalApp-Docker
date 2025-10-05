@@ -7,7 +7,6 @@ import {
   Alert,
   FlatList,
   Image,
-  Platform,
   RefreshControl,
   SafeAreaView,
   Text,
@@ -25,28 +24,8 @@ import { Listing } from '../../constants/Types';
 import { useAuth } from '../../context/AuthContext';
 import { useColorScheme } from '../../hooks/useColorScheme';
 
-// Fallback to localhost if EXPO_PUBLIC_DEV_URL is undefined.  For Android
-// emulators use 10.0.2.2 to reach the host.  Parse EXPO_PUBLIC_DEV_URL to
-// extract the hostname and enforce port 5001.  In production we call our
-// deployed backend.
-const getDevHost = (): string | undefined => {
-  const raw = process.env.EXPO_PUBLIC_DEV_URL;
-  if (!raw) return undefined;
-  try {
-    const urlObj = new URL(raw);
-    return urlObj.hostname;
-  } catch {
-    return undefined;
-  }
-};
-const devHost = getDevHost();
-const DEV_SERVER_URL = devHost ? `http://${devHost}:5001` : 'http://localhost:5001';
-const PRODUCTION_SERVER_URL = 'https://rentalapp-docker-383560472960.us-west2.run.app';
-const BASE_URL = __DEV__
-  ? Platform.OS === 'android'
-    ? (devHost && devHost !== 'localhost' ? `http://${devHost}:5001` : 'http://10.0.2.2:5001')
-    : DEV_SERVER_URL
-  : PRODUCTION_SERVER_URL;
+// ✅ Use one source of truth for the API URL
+import { BASE_URL } from '../../constants/api';
 
 export default function MyListingsScreen() {
   const router = useRouter();
@@ -71,6 +50,8 @@ export default function MyListingsScreen() {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error(`Server error ${res.status}`);
+
+        // Some older documents might come back with `_id`.
         const data: Array<Listing & { _id?: string }> = await res.json();
         const normalized = data.map(l => ({
           ...l,
@@ -162,77 +143,102 @@ export default function MyListingsScreen() {
               tintColor={theme.primary}
             />
           }
-          renderItem={({ item }) => (
-            <Swipeable
-              renderRightActions={() => (
-                <RectButton
-                  style={{
-                    backgroundColor: 'red',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    width: 80,
-                  }}
-                  onPress={() => deleteListing(item.id)}
-                >
-                  <Ionicons name="trash-outline" size={24} color="#fff" />
-                </RectButton>
-              )}
-            >
-              <TouchableOpacity
-                style={{
-                  margin: 10,
-                  backgroundColor: theme.background,
-                  borderRadius: 8,
-                  padding: 10,
-                  shadowColor: '#000',
-                  shadowOpacity: 0.1,
-                }}
-                onPress={() =>
-                  router.push({
-                    pathname: '/listings/[listingId]',
-                    params: { listingId: item.id, from: 'myListings' },
-                  })
-                }
-              >
-                <Image
-                  source={{ uri: item.image }}
-                  style={{ width: '100%', height: 150, borderRadius: 8 }}
-                />
-                <Text
-                  style={{
-                    marginTop: 8,
-                    color: theme.text,
-                    fontSize: 16,
-                    fontWeight: '600',
-                  }}
-                >
-                  {item.title}
-                </Text>
+          renderItem={({ item }) => {
+            // Fallbacks for legacy/partial data
+            const addressLine =
+              item?.address
+                ? [item.address.locality, item.address.city].filter(Boolean).join(', ')
+                : undefined;
 
-                {/* This conditional check prevents the app from crashing on old data */}
-                {item.address && (
-                  <Text style={{ color: theme.text + '99' }}>
-                    {item.address.locality}, {item.address.city}
-                  </Text>
+            // If your backend stores multiple images, consider item.imageUrls?.[0]
+            const imageUri = (item as any)?.image ?? (item as any)?.imageUrl ?? (item as any)?.imageUrls?.[0];
+
+            return (
+              <Swipeable
+                renderRightActions={() => (
+                  <RectButton
+                    style={{
+                      backgroundColor: 'red',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      width: 80,
+                    }}
+                    onPress={() => deleteListing(item.id)}
+                  >
+                    <Ionicons name="trash-outline" size={24} color="#fff" />
+                  </RectButton>
                 )}
-
-                <Text style={{ color: theme.primary, marginTop: 4 }}>
-                  ₹{item.rent.toLocaleString()}/mo
-                </Text>
-
+              >
                 <TouchableOpacity
-                  onPress={() => router.push(`/listings/${item.id}/edit`)}
-                  style={{ position: 'absolute', top: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 15, padding: 4 }}
+                  style={{
+                    margin: 10,
+                    backgroundColor: theme.background,
+                    borderRadius: 8,
+                    padding: 10,
+                    shadowColor: '#000',
+                    shadowOpacity: 0.1,
+                  }}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/listings/[listingId]',
+                      params: { listingId: item.id, from: 'myListings' },
+                    })
+                  }
                 >
-                  <Ionicons name="pencil-outline" size={20} color={'#fff'} />
+                  <Image
+                    source={
+                      imageUri
+                        ? { uri: imageUri }
+                        : require('../../assets/images/placeholder.png') // add a placeholder image to your assets if you don’t already have one
+                    }
+                    style={{ width: '100%', height: 150, borderRadius: 8 }}
+                  />
+
+                  <Text
+                    style={{
+                      marginTop: 8,
+                      color: theme.text,
+                      fontSize: 16,
+                      fontWeight: '600',
+                    }}
+                    numberOfLines={1}
+                  >
+                    {item.title}
+                  </Text>
+
+                  {!!addressLine && (
+                    <Text style={{ color: theme.text + '99' }} numberOfLines={1}>
+                      {addressLine}
+                    </Text>
+                  )}
+
+                  <Text style={{ color: theme.primary, marginTop: 4 }}>
+                    ₹{Number(item.rent ?? 0).toLocaleString()}/mo
+                  </Text>
+
+                  <TouchableOpacity
+                    onPress={() => router.push(`/listings/${item.id}/edit`)}
+                    style={{
+                      position: 'absolute',
+                      top: 10,
+                      right: 10,
+                      backgroundColor: 'rgba(0,0,0,0.5)',
+                      borderRadius: 15,
+                      padding: 4,
+                    }}
+                  >
+                    <Ionicons name="pencil-outline" size={20} color={'#fff'} />
+                  </TouchableOpacity>
                 </TouchableOpacity>
-              </TouchableOpacity>
-            </Swipeable>
-          )}
+              </Swipeable>
+            );
+          }}
           ListEmptyComponent={
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 100 }}>
               <Ionicons name="home-outline" size={60} color={theme.text + '70'} />
-              <Text style={{ color: theme.text, marginTop: 10, fontSize: 16 }}>You haven't posted any listings yet.</Text>
+              <Text style={{ color: theme.text, marginTop: 10, fontSize: 16 }}>
+                You haven't posted any listings yet.
+              </Text>
             </View>
           }
         />

@@ -1,4 +1,4 @@
-// chats.tsx
+// app/(tabs)/chats.tsx
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
@@ -27,38 +27,14 @@ import { useAuth } from '../../context/AuthContext';
 import { useColorScheme } from '../../hooks/useColorScheme';
 import { styles } from './chats.styles';
 
-// Derive a reliable API base URL.  When using Expo, the env var
-// EXPO_PUBLIC_DEV_URL points to the Metro bundler (e.g. "http://192.168.1.10:8081").
-// We extract the host and force port 5001 for our backend.  If no host is
-// available, default to localhost.  Android emulators cannot reach localhost
-// directly, so we use 10.0.2.2 in that case.
-const getDevHost = (): string | undefined => {
-  const raw = process.env.EXPO_PUBLIC_DEV_URL;
-  if (!raw) return undefined;
-  try {
-    const urlObj = new URL(raw);
-    return urlObj.hostname;
-  } catch {
-    return undefined;
-  }
-};
-const devHost = getDevHost();
-const DEV_SERVER_URL = devHost ? `http://${devHost}:5001` : 'http://localhost:5001';
-// Production requests should hit the Cloud Run backend.  Update this if your
-// backend is deployed to a different domain.
-const PRODUCTION_SERVER_URL =
-  'https://rentalapp-docker-383560472960.us-west2.run.app';
-const BASE_URL = __DEV__
-  ? Platform.OS === 'android'
-    ? (devHost && devHost !== 'localhost' ? `http://${devHost}:5001` : 'http://10.0.2.2:5001')
-    : DEV_SERVER_URL
-  : PRODUCTION_SERVER_URL;
+// ✅ One source of truth for API base URL (centralized)
+import { BASE_URL } from '../../constants/api';
 
 // --- Helper to normalize permission result across Expo SDK/type variants ---
 function normalizePermissionStatus(
   p: unknown
 ): Notifications.PermissionStatus {
-  const obj = p as any; // intentionally loosened for cross-SDK compatibility
+  const obj = p as any;
   if (obj && typeof obj.status === 'string') {
     return obj.status as Notifications.PermissionStatus;
   }
@@ -80,7 +56,6 @@ export default function ChatsScreen() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredChatItems, setFilteredChatItems] = useState<ChatListItem[]>([]);
-  
   const swipeableRefs = useRef<Record<string, Swipeable | null>>({});
 
   const loadChats = useCallback(async (isRefreshing = false) => {
@@ -118,26 +93,35 @@ export default function ChatsScreen() {
 
   useFocusEffect(useCallback(() => { loadChats(); }, [loadChats]));
 
-  // --- MODIFICATION: Separate useEffect for WebSocket logic ---
+  // WebSocket connection
   useEffect(() => {
     if (!firebaseUser) return;
-    firebaseUser.getIdToken().then(token => {
-      const socket = io(BASE_URL, { auth: { token }, transports: ['websocket'] });
-      socketRef.current = socket;
-      socket.on('connect', () => console.log('Inbox socket connected'));
-      socket.on('chat-activity', () => { loadChats(true); });
-      socket.on('disconnect', () => console.log('Inbox socket disconnected'));
-    });
-    return () => { socketRef.current?.disconnect(); };
-  }, [firebaseUser, loadChats]);
-  // --- END OF MODIFICATION ---
 
-  // --- NEW: useEffect to handle Push Notifications logic ---
+    let isMounted = true;
+    (async () => {
+      try {
+        const token = await firebaseUser.getIdToken();
+        // If your server needs a custom path, add: { path: '/socket.io' }
+        const socket = io(BASE_URL, { auth: { token }, transports: ['websocket'] });
+        if (!isMounted) return;
+        socketRef.current = socket;
+
+        socket.on('connect', () => console.log('Inbox socket connected'));
+        socket.on('chat-activity', () => { loadChats(true); });
+        socket.on('disconnect', () => console.log('Inbox socket disconnected'));
+      } catch (e) {
+        console.error('Socket init failed', e);
+      }
+    })();
+
+    return () => { isMounted = false; socketRef.current?.disconnect(); };
+  }, [firebaseUser, loadChats]);
+
+  // Push Notifications: register + send token to backend
   useEffect(() => {
     const registerForPushNotifications = async () => {
-      if (!firebaseUser) return; // Wait for the user to be authenticated
+      if (!firebaseUser) return;
 
-      // Android 13+: ensure a channel exists before prompting
       if (Platform.OS === 'android') {
         await Notifications.setNotificationChannelAsync('default', {
           name: 'Default',
@@ -145,29 +129,23 @@ export default function ChatsScreen() {
         });
       }
 
-      // Get existing permissions (shape can vary by SDK)
       const existing = await Notifications.getPermissionsAsync();
       let finalStatus = normalizePermissionStatus(existing);
-
       if (finalStatus !== 'granted') {
-        const req = await Notifications.requestPermissionsAsync();
-        finalStatus = normalizePermissionStatus(req);
+        finalStatus = normalizePermissionStatus(await Notifications.requestPermissionsAsync());
       }
-
       if (finalStatus !== 'granted') {
-        Alert.alert('Permission Denied', 'Failed to get push token for push notifications!');
+        Alert.alert('Permission Denied', 'Failed to get push token for notifications.');
         return;
       }
 
       try {
-        // Provide projectId when available; some setups infer it automatically
         const projectId =
           (Constants as any).expoConfig?.extra?.eas?.projectId ??
           (Constants as any).easConfig?.projectId;
 
         const pushTokenData = await getExpoPushTokenAsync(projectId ? { projectId } : {});
         const token = pushTokenData.data;
-        console.log('Push Token:', token);
 
         const idToken = await firebaseUser.getIdToken();
         await fetch(`${BASE_URL}/api/users/push-token`, {
@@ -185,7 +163,6 @@ export default function ChatsScreen() {
 
     registerForPushNotifications();
   }, [firebaseUser]);
-  // --- END OF NEW ---
 
   const handleDelete = async (chatId: string) => {
     Alert.alert(
@@ -204,7 +181,7 @@ export default function ChatsScreen() {
                 headers: { Authorization: `Bearer ${token}` },
               });
               if (!res.ok) throw new Error('Server responded with an error.');
-              setChatItems(currentItems => currentItems.filter(item => item.chatId !== chatId));
+              setChatItems(current => current.filter(item => item.chatId !== chatId));
             } catch(err) {
               console.error('Delete chat failed:', err);
               Alert.alert('Error', 'Could not delete the chat thread. Please try again.');
@@ -217,32 +194,30 @@ export default function ChatsScreen() {
 
   const handleChatPress = (item: ChatListItem) => {
     Object.values(swipeableRefs.current).forEach(ref => ref?.close());
-    
+
     const isMeTheOwner = firebaseUser?.uid === item.listingOwnerFirebaseUID;
     router.push({
       pathname: '/chat/[chatId]',
-      params: { 
-        chatId: item.chatId, 
+      params: {
+        chatId: item.chatId,
         recipientName: isMeTheOwner ? item.recipientName : item.listingTitle || 'Chat',
-        otherUserId: item.recipientFirebaseUID 
+        otherUserId: item.recipientFirebaseUID
       },
     });
   };
 
-  const renderRightActions = (chatId: string) => {
-    return (
-      <RectButton style={styles.deleteAction} onPress={() => handleDelete(chatId)}>
-        <Ionicons name="trash-outline" size={24} color="#fff" />
-        <Text style={styles.deleteText}>Delete</Text>
-      </RectButton>
-    );
-  };
+  const renderRightActions = (chatId: string) => (
+    <RectButton style={styles.deleteAction} onPress={() => handleDelete(chatId)}>
+      <Ionicons name="trash-outline" size={24} color="#fff" />
+      <Text style={styles.deleteText}>Delete</Text>
+    </RectButton>
+  );
 
   if (loading && chatItems.length === 0) {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-            <View style={styles.emptyContainer}><ActivityIndicator size="large" color={theme.primary} /></View>
+          <View style={styles.emptyContainer}><ActivityIndicator size="large" color={theme.primary} /></View>
         </SafeAreaView>
       </GestureHandlerRootView>
     );
@@ -270,7 +245,7 @@ export default function ChatsScreen() {
             onChangeText={setSearchTerm}
           />
         </View>
-        
+
         {filteredChatItems.length > 0 ? (
           <FlatList
             data={filteredChatItems}
@@ -280,18 +255,16 @@ export default function ChatsScreen() {
               const titleToDisplay = isMeTheOwner ? item.recipientName : item.listingTitle || 'Conversation';
               const subtitleToDisplay = isMeTheOwner ? `Listing: ${item.listingTitle}` : `From: ${item.recipientName}`;
 
-              const avatarSource = item.recipientAvatar 
-                ? { uri: item.recipientAvatar } 
+              const avatarSource = item.recipientAvatar
+                ? { uri: item.recipientAvatar }
                 : require('../../assets/images/avatar.png');
 
               return (
                 <Swipeable
                   ref={ref => { swipeableRefs.current[item.chatId] = ref; }}
                   onSwipeableWillOpen={() => {
-                    Object.keys(swipeableRefs.current).forEach(chatId => {
-                      if (chatId !== item.chatId && swipeableRefs.current[chatId]) {
-                        swipeableRefs.current[chatId]?.close();
-                      }
+                    Object.keys(swipeableRefs.current).forEach(id => {
+                      if (id !== item.chatId) swipeableRefs.current[id]?.close();
                     });
                   }}
                   renderRightActions={() => renderRightActions(item.chatId)}
@@ -311,27 +284,31 @@ export default function ChatsScreen() {
                       </Text>
                     </View>
                     <View style={styles.metaContainer}>
-                      <Text style={[styles.timestamp, { color: theme.text + '99' }]}>{new Date(item.lastMessageTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                      <Text style={[styles.timestamp, { color: theme.text + '99' }]}>
+                        {new Date(item.lastMessageTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </Text>
                       {item.unreadCount > 0 && (
-                        <View style={[styles.unreadBadge, { backgroundColor: theme.primary }]}><Text style={styles.unreadText}>{item.unreadCount}</Text></View>
+                        <View style={[styles.unreadBadge, { backgroundColor: theme.primary }]}>
+                          <Text style={styles.unreadText}>{item.unreadCount}</Text>
+                        </View>
                       )}
                     </View>
                   </TouchableOpacity>
                 </Swipeable>
-              )
+              );
             }}
             ItemSeparatorComponent={() => <View style={[styles.separator, { backgroundColor: theme.text + '15' }]} />}
             refreshControl={<RefreshControl refreshing={loading} onRefresh={() => loadChats(true)} tintColor={theme.primary} />}
           />
         ) : (
           <View style={styles.emptyContainer}>
-              <Ionicons name="chatbubbles-outline" size={60} color={theme.text + '70'} />
-              <Text style={[styles.emptyText, { color: theme.text + 'AA' }]}>
-                {searchTerm ? 'No chats found' : 'No Chats Yet'}
-              </Text>
-              <Text style={[styles.emptySubText, { color: theme.text + '80' }]}>
-                {searchTerm ? 'Try a different search term.' : 'When you start a conversation about a listing, it will appear here.'}
-              </Text>
+            <Ionicons name="chatbubbles-outline" size={60} color={theme.text + '70'} />
+            <Text style={[styles.emptyText, { color: theme.text + 'AA' }]}>
+              {searchTerm ? 'No chats found' : 'No Chats Yet'}
+            </Text>
+            <Text style={[styles.emptySubText, { color: theme.text + '80' }]}>
+              {searchTerm ? 'Try a different search term.' : 'When you start a conversation about a listing, it will appear here.'}
+            </Text>
           </View>
         )}
       </SafeAreaView>

@@ -1,4 +1,4 @@
-// profile.tsx
+// app/(tabs)/profile.tsx
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useRouter } from 'expo-router';
@@ -25,28 +25,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useColorScheme } from '../../hooks/useColorScheme';
 import { styles } from './profile.styles';
 
-// Compute the base URL for API calls.  When EXPO_PUBLIC_DEV_URL is not
-// provided, use localhost on port 5001.  Android emulators use 10.0.2.2
-// to reference the host machine.  Parse the dev URL to get the host and
-// always target port 5001.  In production we call our Cloud Run backend.
-const getDevHost = (): string | undefined => {
-  const raw = process.env.EXPO_PUBLIC_DEV_URL;
-  if (!raw) return undefined;
-  try {
-    const urlObj = new URL(raw);
-    return urlObj.hostname;
-  } catch {
-    return undefined;
-  }
-};
-const devHost = getDevHost();
-const DEV_SERVER_URL = devHost ? `http://${devHost}:5001` : 'http://localhost:5001';
-const PRODUCTION_SERVER_URL = 'https://rentalapp-docker-383560472960.us-west2.run.app';
-const BASE_URL = __DEV__
-  ? Platform.OS === 'android'
-    ? (devHost && devHost !== 'localhost' ? `http://${devHost}:5001` : 'http://10.0.2.2:5001')
-    : DEV_SERVER_URL
-  : PRODUCTION_SERVER_URL;
+// ✅ One source of truth for API URL
+import { BASE_URL } from '../../constants/api';
 
 interface EditableFieldProps {
   label: string;
@@ -140,10 +120,6 @@ export default function ProfileScreen() {
     setUri(mongoUser?.profileImageUrl || firebaseUser?.photoURL);
   }, [mongoUser, firebaseUser]);
 
-  // Helper to send updates to your backend.  Use the computed BASE_URL so
-  // calls target the correct port on all platforms.  Without this, the hard
-  // coded localhost:5001 would fail on Android devices and fall back to
-  // undefined when EXPO_PUBLIC_DEV_URL is not set.
   const patchProfile = async (body: Record<string, any>) => {
     const token = await firebaseUser!.getIdToken();
     const res = await fetch(`${BASE_URL}/api/auth/profile`, {
@@ -174,9 +150,7 @@ export default function ProfileScreen() {
       setUri(newUri);
 
       try {
-        // 1) Firebase Auth profile
         await updateProfile(firebaseUser, { photoURL: newUri });
-        // 2) MongoDB user document
         await patchProfile({ profileImageUrl: newUri });
         Alert.alert('Profile picture updated');
       } catch {
@@ -253,8 +227,7 @@ export default function ProfileScreen() {
               label="Email"
               value={mongoUser?.email || firebaseUser?.email}
               onSave={async v => {
-                // Note: changing email in Firebase requires recent login!
-                await updateEmail(firebaseUser!, v);
+                await updateEmail(firebaseUser!, v); // requires recent login in some cases
                 await patchProfile({ email: v });
               }}
               keyboardType="email-address"
