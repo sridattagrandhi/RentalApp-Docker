@@ -1,28 +1,28 @@
 // app/listings/[listingId]/index.tsx
-import React, { useEffect, useState, useCallback } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  SafeAreaView,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
   FlatList,
   Image,
-  ActivityIndicator,
-  StyleSheet,
-  Dimensions,
-  Platform,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
   Linking,
+  Platform,
+  SafeAreaView,
+  ScrollView,
   Share,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 
-import { Listing, UserProfile } from '../../../constants/Types';
 import { Colors } from '../../../constants/Colors';
-import { useColorScheme } from '../../../hooks/useColorScheme';
+import { Listing, UserProfile } from '../../../constants/Types';
 import { useAuth } from '../../../context/AuthContext';
+import { useColorScheme } from '../../../hooks/useColorScheme';
 
 const windowWidth = Dimensions.get('window').width;
 // Fallback to localhost if EXPO_PUBLIC_DEV_URL is not set.  Android uses
@@ -40,7 +40,7 @@ const getDevHost = (): string | undefined => {
 };
 const devHost = getDevHost();
 const DEV_SERVER_URL = devHost ? `http://${devHost}:5001` : 'http://localhost:5001';
-const PRODUCTION_SERVER_URL = 'https://roomrentalnativeapp-383560472960.us-west2.run.app';
+const PRODUCTION_SERVER_URL = 'https://rentalapp-docker-383560472960.us-west2.run.app';
 const BASE_URL = __DEV__
   ? Platform.OS === 'android'
     ? (devHost && devHost !== 'localhost' ? `http://${devHost}:5001` : 'http://10.0.2.2:5001')

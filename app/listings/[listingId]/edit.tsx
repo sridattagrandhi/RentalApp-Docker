@@ -1,29 +1,29 @@
 // app/listings/[listingId]/edit.tsx
-import React, { useEffect, useState, useCallback } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  FlatList,
+  Image,
+  Platform,
   SafeAreaView,
   ScrollView,
-  View,
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
-  Image,
-  FlatList,
   StyleSheet,
-  Dimensions,
-  Alert,
-  Text,
-  Platform,
   Switch,
+  Text,
+  TextInput,
   TextInputProps,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../../context/AuthContext';
-import { Listing } from '../../../constants/Types';
 import { Colors } from '../../../constants/Colors';
+import { Listing } from '../../../constants/Types';
+import { useAuth } from '../../../context/AuthContext';
 import { useColorScheme } from '../../../hooks/useColorScheme';
-import * as ImagePicker from 'expo-image-picker';
 
 const windowWidth = Dimensions.get('window').width;
 // Provide a fallback for EXPO_PUBLIC_DEV_URL when undefined.  On Android
@@ -41,7 +41,7 @@ const getDevHost = (): string | undefined => {
 };
 const devHost = getDevHost();
 const DEV_SERVER_URL = devHost ? `http://${devHost}:5001` : 'http://localhost:5001';
-const PRODUCTION_SERVER_URL = 'https://roomrentalnativeapp-383560472960.us-west2.run.app';
+const PRODUCTION_SERVER_URL = 'https://rentalapp-docker-383560472960.us-west2.run.app';
 const BASE_URL = __DEV__
   ? Platform.OS === 'android'
     ? (devHost && devHost !== 'localhost' ? `http://${devHost}:5001` : 'http://10.0.2.2:5001')

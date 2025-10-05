@@ -1,12 +1,6 @@
 import { FirebaseApp, getApp, getApps, initializeApp } from "firebase/app";
-import { Auth, getAuth } from "firebase/auth"; // ← use getAuth, not initializeAuth
-// AsyncStorage is only needed if you really want explicit persistence control.
-// Expo Go’s WebSDK persistence is fine in most cases, so we don’t need initializeAuth here.
-// import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Auth, getAuth } from "firebase/auth";
 
-//
-// 1) Your Firebase Web SDK config — replace with your actual values:
-//
 const firebaseConfig = {
   apiKey: "AIzaSyDPnZrp4rdDxFp_nlOEvFtDapseVpjktKM",
   authDomain: "rentals-da2b8.firebaseapp.com",

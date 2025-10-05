@@ -1,29 +1,29 @@
 // app/(tabs)/myListings.tsx
-import React, { useState, useCallback } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { Stack, useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import {
-  View,
-  Text,
-  SafeAreaView,
-  FlatList,
-  Image,
-  TouchableOpacity,
-  RefreshControl,
   ActivityIndicator,
   Alert,
+  FlatList,
+  Image,
   Platform,
+  RefreshControl,
+  SafeAreaView,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { Stack, useRouter, useFocusEffect } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import {
   GestureHandlerRootView,
-  Swipeable,
   RectButton,
+  Swipeable,
 } from 'react-native-gesture-handler';
 
-import { useAuth } from '../../context/AuthContext';
 import { Colors } from '../../constants/Colors';
-import { useColorScheme } from '../../hooks/useColorScheme';
 import { Listing } from '../../constants/Types';
+import { useAuth } from '../../context/AuthContext';
+import { useColorScheme } from '../../hooks/useColorScheme';
 
 // Fallback to localhost if EXPO_PUBLIC_DEV_URL is undefined.  For Android
 // emulators use 10.0.2.2 to reach the host.  Parse EXPO_PUBLIC_DEV_URL to
@@ -41,7 +41,7 @@ const getDevHost = (): string | undefined => {
 };
 const devHost = getDevHost();
 const DEV_SERVER_URL = devHost ? `http://${devHost}:5001` : 'http://localhost:5001';
-const PRODUCTION_SERVER_URL = 'https://roomrentalnativeapp-383560472960.us-west2.run.app';
+const PRODUCTION_SERVER_URL = 'https://rentalapp-docker-383560472960.us-west2.run.app';
 const BASE_URL = __DEV__
   ? Platform.OS === 'android'
     ? (devHost && devHost !== 'localhost' ? `http://${devHost}:5001` : 'http://10.0.2.2:5001')

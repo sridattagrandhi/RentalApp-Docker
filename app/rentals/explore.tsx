@@ -1,25 +1,25 @@
 // app/rentals/explore.tsx
-import React, { useState, useCallback, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  SafeAreaView,
   ActivityIndicator,
   Alert,
-  RefreshControl,
-  ScrollView,
-  TextInput,
+  FlatList,
   Modal,
   Platform,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useRouter, useLocalSearchParams, Stack, useFocusEffect } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 
-import ThemedView from '../../components/ThemedView';
-import ThemedText from '../../components/ThemedText';
 import ListingCard from '../../components/ListingCard';
+import ThemedText from '../../components/ThemedText';
+import ThemedView from '../../components/ThemedView';
 import { useAuth } from '../../context/AuthContext';
 
 import { Colors } from '../../constants/Colors';
@@ -67,7 +67,7 @@ const getDevHost = (): string | undefined => {
 };
 const devHost = getDevHost();
 const DEV_SERVER_URL = devHost ? `http://${devHost}:5001` : 'http://localhost:5001';
-const PRODUCTION_SERVER_URL = 'https://roomrentalnativeapp-383560472960.us-west2.run.app';
+const PRODUCTION_SERVER_URL = 'https://rentalapp-docker-383560472960.us-west2.run.app';
 const BASE_URL = __DEV__
   ? Platform.OS === 'android'
     ? (devHost && devHost !== 'localhost' ? `http://${devHost}:5001` : 'http://10.0.2.2:5001')

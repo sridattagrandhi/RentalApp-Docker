@@ -1,16 +1,23 @@
 // app/chat/[chatId].tsx
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import {
-  View, Text, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform,
-  StyleSheet, Alert, SafeAreaView, ActivityIndicator,
-} from 'react-native';
-import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
-import io, { Socket } from 'socket.io-client';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../context/AuthContext';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  KeyboardAvoidingView, Platform,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TextInput, TouchableOpacity,
+  View,
+} from 'react-native';
+import io, { Socket } from 'socket.io-client';
 import { Colors } from '../../constants/Colors';
-import { useColorScheme } from '../../hooks/useColorScheme';
 import { Message } from '../../constants/Types';
+import { useAuth } from '../../context/AuthContext';
+import { useColorScheme } from '../../hooks/useColorScheme';
 
 type DateSeparator = { type: 'date-separator'; date: string; _id: string };
 type ChatListItemData = Message | DateSeparator;
@@ -64,7 +71,7 @@ const devHost = getDevHost();
 const DEV_SERVER_URL = devHost ? `http://${devHost}:5001` : 'http://localhost:5001';
 // Production requests should hit the Cloud Run backend.  Update this if your
 // backend is deployed elsewhere.
-const PRODUCTION_SERVER_URL = 'https://roomrentalnativeapp-383560472960.us-west2.run.app';
+const PRODUCTION_SERVER_URL = 'https://rentalapp-docker-383560472960.us-west2.run.app';
 export const BASE_URL = __DEV__
   ? Platform.OS === 'android'
     ? (devHost && devHost !== 'localhost' ? `http://${devHost}:5001` : 'http://10.0.2.2:5001')

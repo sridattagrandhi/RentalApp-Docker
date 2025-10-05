@@ -1,23 +1,23 @@
 // app/(tabs)/wishlist.tsx
-import React, { useState, useCallback } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { Stack, useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import {
-  View,
-  Text,
-  SafeAreaView,
-  FlatList,
   ActivityIndicator,
   Alert,
+  FlatList,
   Platform,
   RefreshControl,
+  SafeAreaView,
+  Text,
+  View,
 } from 'react-native';
-import { Stack, useRouter, useFocusEffect } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 
 import ListingCard from '../../components/ListingCard'; // Reusable ListingCard component
-import { useAuth } from '../../context/AuthContext';
 import { Colors } from '../../constants/Colors';
-import { useColorScheme } from '../../hooks/useColorScheme';
 import { Listing } from '../../constants/Types';
+import { useAuth } from '../../context/AuthContext';
+import { useColorScheme } from '../../hooks/useColorScheme';
 import { styles } from './wishlist.styles'; // Styles for this screen
 
 // Provide a fallback for EXPO_PUBLIC_DEV_URL when running locally.  Android
@@ -35,7 +35,7 @@ const getDevHost = (): string | undefined => {
 };
 const devHost = getDevHost();
 const DEV_SERVER_URL = devHost ? `http://${devHost}:5001` : 'http://localhost:5001';
-const PRODUCTION_SERVER_URL = 'https://roomrentalnativeapp-383560472960.us-west2.run.app';
+const PRODUCTION_SERVER_URL = 'https://rentalapp-docker-383560472960.us-west2.run.app';
 const BASE_URL = __DEV__
   ? Platform.OS === 'android'
     ? (devHost && devHost !== 'localhost' ? `http://${devHost}:5001` : 'http://10.0.2.2:5001')

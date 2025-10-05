@@ -1,19 +1,29 @@
 // app/rental/post-room.tsx
-import React, { useState, useEffect } from 'react';
-import {
-  Platform, View, Text, StyleSheet, SafeAreaView, TextInput,
-  TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Image, ActivityIndicator,
-} from 'react-native';
-import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
-import { Ionicons } from '@expo/vector-icons';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
-import { useAuth } from '../../context/AuthContext';
-import { Colors } from '../../constants/Colors';
-import { useColorScheme } from '../../hooks/useColorScheme';
 import ThemedText from '../../components/ThemedText';
+import { Colors } from '../../constants/Colors';
 import { Listing } from '../../constants/Types';
+import { useAuth } from '../../context/AuthContext';
+import { useColorScheme } from '../../hooks/useColorScheme';
 
 // --- Using the robust BASE_URL definition ---
 // Determine API endpoint.  When running locally, EXPO_PUBLIC_DEV_URL may be
@@ -34,7 +44,7 @@ const devHost = getDevHost();
 const DEV_SERVER_URL = devHost ? `http://${devHost}:5001` : 'http://localhost:5001';
 // When building for production we always call our deployed Cloud Run backend.
 // Update this URL if you deploy the backend to a different domain.
-const PRODUCTION_SERVER_URL = 'https://roomrentalnativeapp-383560472960.us-west2.run.app';
+const PRODUCTION_SERVER_URL = 'https://rentalapp-docker-383560472960.us-west2.run.app';
 
 const BASE_URL = __DEV__
   ? Platform.OS === 'android'
